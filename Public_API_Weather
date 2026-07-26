@@ -1,0 +1,117 @@
+import tkinter as tk
+import requests as rq
+from twilio.rest import Client
+
+#BASE_URL
+BASE_URL = "https://api.openweathermap.org/data/2.5/weather"
+#API KEY-> login and create you api key
+API_KEY = "xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+#send to mobile
+def envio_whatsapp():
+    text_weather = output_label.cget("text")
+
+    if text_weather == "" or "not found" in text_weather or "No City" in text_weather:
+        print("Nothing to be sent.")
+        return
+#log in and create your sid and token in twilio site
+    account_sid = 'xxxxxxxxxxxxxxxxxxxxxxxxxxx'
+    auth_token = 'xxxxxxxxxxxxxxxxxxxxxxxxx'
+    client = Client(account_sid, auth_token)
+
+    try:
+        message = client.messages.create(
+           #twilio mobile service number
+           from_='whatsapp:+xxxxxxxxxxxxxx', 
+           body=text_weather,
+           #your mobile number
+           to='whatsapp:+xxxxxxxxxxxxxxx' 
+        )
+        print(f"Message sent! ID: {message.sid}")
+    except Exception as e:
+        print(f"Error sendind: {e}")
+#convert Lat to coord to DMS
+def convert_LatCoord_DMS(data):
+    LatCoord = abs(float(data["coord"]["lat"]))
+    LatCoord_deg = int(LatCoord)
+    LatCoord_min = (LatCoord - LatCoord_deg)*60
+    LatCoord_sec = (LatCoord_min - int(LatCoord_min))*60
+    if float(data["coord"]["lat"])<0:
+        geogrLat_pos = "S"
+    else:
+        geogrLat_pos = "N"
+    result_Lat = (f"({LatCoord_deg:.1f}° {LatCoord_min:.1f}' {LatCoord_sec:.1f}''){geogrLat_pos}")
+    return result_Lat
+#convert Lon to coord to DMS
+def convert_LonCoord_DMS(data):
+    LonCoord = abs(float(data["coord"]["lon"]))
+    LonCoord_deg = int(LonCoord)
+    LonCoord_min = (LonCoord - LonCoord_deg)*60
+    LonCoord_sec = ((LonCoord_min) - int(LonCoord_min))*60
+    if float(data["coord"]["lat"])<0:
+        geogrLon_pos = "W"
+    else:
+        geogrLon_pos = "E"
+    result_Lon = (f"({LonCoord_deg:.1f}° {LonCoord_min:.1f}' {LonCoord_sec:.1f}''){geogrLon_pos}")
+    return result_Lon
+
+#get weather
+def get_weather():
+    city = city_entry.get().strip()
+    if city=="":
+            output_label.config(text="No City Typed")
+            return
+    params = {
+        "q":city,
+        "appid":API_KEY,
+        "units":"metric"
+    }
+    response = rq.get(BASE_URL, params=params)
+    data = response.json()
+    
+    if int(data["cod"]) == 200:
+        result_Lat = convert_LatCoord_DMS(data)
+        result_Lon = convert_LonCoord_DMS(data)            
+        WindSpeed = data["wind"]["speed"]*1.94
+        WindDirection = data["wind"]["deg"]
+        Visib = data["visibility"]
+        Sky = data["weather"][0]["description"]
+        Temp = data["main"]["temp"]
+        Pressure = data["main"]["pressure"]
+        output_label.config (text=f"Lat: {result_Lat}\n"
+                                  f"Long: {result_Lon}\n"
+                                  f"WindSpeed: {WindSpeed:.2f} knots\n"
+                                  f"Mag Wind Direction: {WindDirection}°\n"
+                                  f"Visibility: {Visib} m\n"
+                                  f"Sky: {Sky}\n"
+                                  f"Temperature: {Temp:.2f} °C\n"
+                                  f"Pressure: {Pressure:.2f} HPa\n")
+        envio_whatsapp()
+                   
+    else: 
+        output_label.config(text="City not found")
+        
+#grafic part
+root = tk.Tk()
+root.title("Pilot Weather Information")
+root.geometry("300x450")
+# top label
+top_label = tk.Label(root, text = "City Location", font = ("Calibri", 18))
+top_label.pack(pady=10)
+#city label
+city_label = tk.Label(root, text="Type the City", font=("Calibri", 15), )
+city_label.pack(pady=5)
+#entry box
+city_entry = tk.Entry(root, font=("Calibri", 16), )
+city_entry.pack(pady=10)
+#submit button
+submit_button = tk.Button(root, text="Send", font=("Calibri", 15), command=get_weather, border=5.0)
+submit_button.pack(pady=5)
+#output label
+output_label = tk.Label(root, font=("Calibri", 12), justify="left")
+output_label.pack(pady=10)
+#finish
+finish_button = tk.Button(root, text="Exit", font=("Calibri", 15), command=exit, border=4.0)
+finish_button.pack(pady=10)
+#initiate loop
+root.mainloop()
