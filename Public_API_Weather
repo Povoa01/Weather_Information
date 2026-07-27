@@ -30,6 +30,7 @@ def envio_whatsapp():
         print(f"Message sent! ID: {message.sid}")
     except Exception as e:
         print(f"Error sendind: {e}")
+
 #convert Lat to coord to DMS
 def convert_LatCoord_DMS(data):
     LatCoord = abs(float(data["coord"]["lat"]))
@@ -42,6 +43,7 @@ def convert_LatCoord_DMS(data):
         geogrLat_pos = "N"
     result_Lat = (f"({LatCoord_deg:.1f}° {LatCoord_min:.1f}' {LatCoord_sec:.1f}''){geogrLat_pos}")
     return result_Lat
+
 #convert Lon to coord to DMS
 def convert_LonCoord_DMS(data):
     LonCoord = abs(float(data["coord"]["lon"]))
@@ -90,7 +92,11 @@ def get_weather():
                    
     else: 
         output_label.config(text="City not found")
-        
+
+# encerra app
+def encerrar():
+    root.destroy()
+
 #grafic part
 root = tk.Tk()
 root.title("Pilot Weather Information")
@@ -111,7 +117,7 @@ submit_button.pack(pady=5)
 output_label = tk.Label(root, font=("Calibri", 12), justify="left")
 output_label.pack(pady=10)
 #finish
-finish_button = tk.Button(root, text="Exit", font=("Calibri", 15), command=exit, border=4.0)
+finish_button = tk.Button(root, text="Exit", font=("Calibri", 15), command=encerrar, border=4.0)
 finish_button.pack(pady=10)
 #initiate loop
 root.mainloop()
